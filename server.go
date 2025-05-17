@@ -6,6 +6,7 @@ import (
 	"net"
 	"strconv"
 	"sync"
+	"time"
 )
 
 type Server struct {
@@ -55,6 +56,7 @@ func (server *Server) Handler(conn net.Conn) {
 	//用户上线广播
 	user := NewUser(conn, server)
 	user.Online()
+	isLive := make(chan bool)
 
 	//接收用户消息
 	go func() {
@@ -74,10 +76,25 @@ func (server *Server) Handler(conn net.Conn) {
 			msg := string(buf[:n-1])
 			//广播消息
 			user.DoMessage(msg)
+
+			//用户活跃
+			isLive <- true
 		}
 	}()
 
-	select {}
+	for{
+		select{
+			case <- isLive:
+				//当前用户活跃，重置定时器
+				//不做任何事情，为了激活select，更新下面的定时器
+			case <- time.After(10*time.Minute):
+				user.SendMsg("You have been idle for too long, please re-enter \n")
+				//return
+				close(user.C)
+				conn.Close()
+				return //runtime.Goexit()
+		}
+	}
 }
 
 func (server *Server) Start() {
