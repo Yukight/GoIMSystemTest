@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"net"
 	"strconv"
 	"sync"
@@ -57,6 +58,28 @@ func (server *Server) Handler(conn net.Conn) {
 	server.OnlineMap[user.Name] = user
 	server.mapLock.Unlock()
 	server.Broadcast(user, "has joined the chat room \n")
+
+	//接收用户消息
+	go func() {
+		buf := make([]byte, 4096)
+
+		for {
+			n, err := conn.Read(buf)
+			if n == 0 {
+				server.Broadcast(user, "has left the chat room \n")
+				return
+			}
+			if err != nil && err != io.EOF {
+				fmt.Printf("conn.Read err: %s", err)
+				return
+			}
+			//提取用户消息
+			msg := string(buf[:n-1])
+			//广播消息
+			server.Broadcast(user, msg)
+		}
+	}()
+
 	select {}
 }
 
