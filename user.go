@@ -53,9 +53,21 @@ func (user *User) DoMessage(msg string) {
 			user.SendMsg(onlineMsg)
 		}
 		user.server.mapLock.Unlock()
+	}else if len(msg) > 7 && msg[:7] == "rename|" {
+		newName := msg[7:]
+		_, ok := user.server.OnlineMap[newName]
+		if ok {
+			user.SendMsg("The name is already used, please change another name\n")
+		}else {
+			user.server.mapLock.Lock()
+			delete(user.server.OnlineMap, user.Name)
+			user.server.OnlineMap[newName] = user
+			user.server.mapLock.Unlock()
+			user.Name = newName
+			user.SendMsg("Your name has been updated to: " + user.Name + "\n")
+		}
 	}else {
 		user.server.Broadcast(user, msg)
-
 	}
 }
 
