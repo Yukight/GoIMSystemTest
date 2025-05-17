@@ -53,11 +53,8 @@ func (server *Server) Handler(conn net.Conn) {
 	// fmt.Printf("server connected to %s:%d, at: %s \n", server.Ip, server.Port, time.DateTime)
 
 	//用户上线广播
-	user := NewUser(conn)
-	server.mapLock.Lock()
-	server.OnlineMap[user.Name] = user
-	server.mapLock.Unlock()
-	server.Broadcast(user, "has joined the chat room \n")
+	user := NewUser(conn, server)
+	user.Online()
 
 	//接收用户消息
 	go func() {
@@ -66,7 +63,7 @@ func (server *Server) Handler(conn net.Conn) {
 		for {
 			n, err := conn.Read(buf)
 			if n == 0 {
-				server.Broadcast(user, "has left the chat room \n")
+				user.Offline()
 				return
 			}
 			if err != nil && err != io.EOF {
@@ -76,7 +73,7 @@ func (server *Server) Handler(conn net.Conn) {
 			//提取用户消息
 			msg := string(buf[:n-1])
 			//广播消息
-			server.Broadcast(user, msg)
+			user.DoMessage(msg)
 		}
 	}()
 
