@@ -87,7 +87,7 @@ func (server *Server) Handler(conn net.Conn) {
 			case <- isLive:
 				//当前用户活跃，重置定时器
 				//不做任何事情，为了激活select，更新下面的定时器
-			case <- time.After(10*time.Minute):
+			case <- time.After(10*time.Hour):
 				user.SendMsg("You have been idle for too long, please re-enter \n")
 				//return
 				close(user.C)

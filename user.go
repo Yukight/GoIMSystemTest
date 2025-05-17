@@ -2,6 +2,7 @@ package main
 
 import (
 	"net"
+	"strings"
 )
 
 type User struct {
@@ -66,6 +67,22 @@ func (user *User) DoMessage(msg string) {
 			user.Name = newName
 			user.SendMsg("Your name has been updated to: " + user.Name + "\n")
 		}
+	}else if len(msg) > 4 && msg[:3] == "to|"{
+		//获取对方用户名
+		remoteName := strings.Split(msg, "|")[1]
+		if remoteName == "" {
+			user.SendMsg("Message format is incorrect, please use \"to|username|message\" format\n")
+			return
+		}
+		remoteUser, ok := user.server.OnlineMap[remoteName]
+		if !ok {
+			user.SendMsg("The user is not online\n")
+			return
+		}
+		//获取消息内容
+		content := strings.Split(msg, "|")[2]
+		remoteUser.SendMsg(user.Name + " says: " + content + "\n")
+
 	}else {
 		user.server.Broadcast(user, msg)
 	}
