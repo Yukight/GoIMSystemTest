@@ -41,8 +41,22 @@ func (user *User) Offline() {
 	user.server.Broadcast(user, "has left the chat room \n")
 }
 
+//给当前用户的客户端发送消息
+func (user *User) SendMsg(msg string) {
+	user.conn.Write([]byte(msg))
+}
 func (user *User) DoMessage(msg string) {
-	user.server.Broadcast(user, msg)
+	if msg == "who" {
+		user.server.mapLock.Lock()
+		for _, u := range user.server.OnlineMap {
+			onlineMsg := "[" + u.Addr + "]" + u.Name + ": online...\n"
+			user.SendMsg(onlineMsg)
+		}
+		user.server.mapLock.Unlock()
+	}else {
+		user.server.Broadcast(user, msg)
+
+	}
 }
 
 
